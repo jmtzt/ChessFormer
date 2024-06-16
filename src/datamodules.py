@@ -126,7 +126,7 @@ class GPTChessDataModule(pl.LightningDataModule):
 
 if __name__ == "__main__":
     DATASET_PATH = "data/lichess"
-    dm = ChessDataModule(
+    dm = GPTChessDataModule(
         dataset_path=DATASET_PATH, file_path="lichess_6gb_blocks.zip"
     )
     dm.setup()
