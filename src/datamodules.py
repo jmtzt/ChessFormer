@@ -1,8 +1,8 @@
 import pickle
 from pathlib import Path
 
+import lightning as pl
 import numpy as np
-import pytorch_lightning as pl
 import torch
 from datasets import load_dataset
 from torch.utils.data import DataLoader, Dataset
@@ -29,7 +29,7 @@ class GPTChessDataset(Dataset):
         return x, y
 
 
-class ChessDataModule(pl.LightningDataModule):
+class GPTChessDataModule(pl.LightningDataModule):
     """Data Module for Chess data handling."""
 
     def __init__(
