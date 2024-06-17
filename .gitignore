@@ -1,4 +1,7 @@
 .idea
+wandb
+lightning_logs
+.DS_Store
 todo
 __pycache__/
 data/
