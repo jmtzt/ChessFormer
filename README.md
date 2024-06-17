@@ -19,6 +19,11 @@ Ensure you have Python 3.7 or later installed.
    cd ChessGPT
    ```
 
+   Also make sure to install the pre-commit hooks by running the following command:
+   ```bash
+   pre-commit install
+   ```
+
 2. **Download the Dataset**:
    Download the chess dataset from [Hugging Face Datasets](https://huggingface.co/datasets/adamkarvonen/chess_games). Place the downloaded files in the `data/lichess` directory.
    For the initial experiments, I've used the `lichess_6gb_blocks` dataset.
