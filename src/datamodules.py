@@ -59,20 +59,21 @@ class GPTChessDataModule(pl.LightningDataModule):
         self.itos = meta["itos"]
 
     def setup(self, stage=None):
-        dataset = load_dataset(
-            path=str(self.dataset_path), data_files=self.file_path
-        )
-        print(f"Loaded dataset: {dataset}")
-        split_dataset = dataset["train"].train_test_split(
-            test_size=0.01, seed=1337, shuffle=True
-        )
-        split_dataset["val"] = split_dataset.pop("test")
-        self.dataset = split_dataset.map(
-            self.process,
-            remove_columns=[self.column_name],
-            num_proc=self.num_workers,
-            desc="tokenizing",
-        )
+        if stage == "prepare_data":
+            dataset = load_dataset(
+                path=str(self.dataset_path), data_files=self.file_path
+            )
+            print(f"Loaded dataset: {dataset}")
+            split_dataset = dataset["train"].train_test_split(
+                test_size=0.01, seed=1337, shuffle=True
+            )
+            split_dataset["val"] = split_dataset.pop("test")
+            self.dataset = split_dataset.map(
+                self.process,
+                remove_columns=[self.column_name],
+                num_proc=self.num_workers,
+                desc="tokenizing",
+            )
 
     def process(self, example):
         ids = np.array(
@@ -112,6 +113,7 @@ class GPTChessDataModule(pl.LightningDataModule):
             train_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
+            persistent_workers=True,
             shuffle=True,
         )
 
@@ -121,6 +123,7 @@ class GPTChessDataModule(pl.LightningDataModule):
             val_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
+            persistent_workers=True,
         )
 
 
@@ -129,5 +132,5 @@ if __name__ == "__main__":
     dm = GPTChessDataModule(
         dataset_path=DATASET_PATH, file_path="lichess_6gb_blocks.zip"
     )
-    dm.setup()
+    dm.setup(stage="prepare_data")
     dm.save_preprocessed_data()
