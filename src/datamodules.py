@@ -37,12 +37,14 @@ class GPTChessDataModule(pl.LightningDataModule):
         dataset_path: str,
         file_path: str,
         batch_size: int = 32,
+        block_size: int = 1023,
         num_workers: int = 4,
     ):
         super().__init__()
         self.dataset_path = Path(dataset_path)
         self.file_path = file_path
         self.batch_size = batch_size
+        self.block_size = block_size
         self.num_workers = num_workers
         self.meta_path = self.dataset_path / "meta.pkl"
         self.train_path = self.dataset_path / "train.bin"
@@ -108,7 +110,7 @@ class GPTChessDataModule(pl.LightningDataModule):
             print(f"Data for {split} saved to {filename}")
 
     def train_dataloader(self):
-        train_dataset = GPTChessDataset(self.train_path, self.batch_size)
+        train_dataset = GPTChessDataset(self.train_path, self.block_size)
         return DataLoader(
             train_dataset,
             batch_size=self.batch_size,
@@ -118,7 +120,7 @@ class GPTChessDataModule(pl.LightningDataModule):
         )
 
     def val_dataloader(self):
-        val_dataset = GPTChessDataset(self.val_path, self.batch_size)
+        val_dataset = GPTChessDataset(self.val_path, self.block_size)
         return DataLoader(
             val_dataset,
             batch_size=self.batch_size,
