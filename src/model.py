@@ -1,25 +1,31 @@
+from dataclasses import asdict
+
 import lightning as pl
 import torch
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import LambdaLR
 
+from config import ModelConfig
 from network import GPT, GPTConfig
-from utils import filter_config, get_metadata
+from utils import filter_config, get_learning_rate, get_metadata
 
 
 class GPTChessLightning(pl.LightningModule):
-    def __init__(self, config):
+    def __init__(self, config: ModelConfig):
         super().__init__()
         self.config = config
         self.model = GPT(GPTConfig(**self.get_model_config()))
         self.criterion = torch.nn.CrossEntropyLoss()
         self.save_hyperparameters(
-            {**self.config, "vocab_size": self.get_model_config()["vocab_size"]}
+            {
+                **asdict(self.config),
+                "vocab_size": self.get_model_config()["vocab_size"],
+            }
         )
 
     def get_model_config(self):
-        gpt_config = filter_config(self.config, GPTConfig)
-        meta = get_metadata(self.config["meta_path"])
+        gpt_config = filter_config(asdict(self.config), GPTConfig)
+        meta = get_metadata(self.config.meta_path)
         gpt_config["vocab_size"] = meta["vocab_size"]
         return gpt_config
 
@@ -65,10 +71,14 @@ class GPTChessLightning(pl.LightningModule):
             weight_decay=self.hparams["weight_decay"],
         )
 
-        scheduler = CosineAnnealingLR(
+        scheduler = LambdaLR(
             optimizer,
-            T_max=self.hparams["lr_decay_iters"],
-            eta_min=self.hparams["min_lr"],
+            lr_lambda=lambda step: get_learning_rate(
+                self.hparams["learning_rate"],
+                self.hparams["warmup_iters"],
+                self.hparams["lr_decay_iters"],
+                self.hparams["min_lr"],
+                step,
+            ),
         )
-
         return [optimizer], [scheduler]
