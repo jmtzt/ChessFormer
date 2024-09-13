@@ -5,9 +5,9 @@ import torch
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
 
-from config import DataConfig, ModelConfig, TrainConfig
-from datamodules import GPTChessDataModule
-from model import GPTChessLightning
+from src.config import DataConfig, ModelConfig, TrainConfig
+from src.datamodules import GPTChessDataModule
+from src.model import GPTChessLightning
 
 
 def main():
