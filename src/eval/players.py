@@ -118,7 +118,7 @@ class StockfishPlayer(Player):
 class ChessGPTPlayer(pl.LightningModule, Player):
     def __init__(
         self,
-        model_name: str = "last-v1.ckpt",
+        checkpoint_name: str = "last-v1.ckpt",
         checkpoint_path: str = "checkpoints/trained",
         activation_name: Optional[str] = None,
         activation_coefficient: Optional[float] = None,
@@ -128,7 +128,7 @@ class ChessGPTPlayer(pl.LightningModule, Player):
         device: str = "cpu",
     ):
         super().__init__()
-        self.model_name = model_name
+        self.checkpoint_name = checkpoint_name
         self.checkpoint_path = Path(checkpoint_path)
         self.activation_name = activation_name
         self.activation_coefficient = activation_coefficient
@@ -145,7 +145,7 @@ class ChessGPTPlayer(pl.LightningModule, Player):
         # }[dtype]
 
         ckpt = torch.load(
-            self.checkpoint_path / self.model_name,
+            self.checkpoint_path / self.checkpoint_name,
             map_location=self.device_type,
         )
         filtered_hparams = filter_hyperparameters(
@@ -285,6 +285,7 @@ class ChessGPTPlayer(pl.LightningModule, Player):
         max_attempts: int = 10,
     ) -> str:
         for attempt in range(max_attempts):
+            temperature = temperature + random.uniform(-0.01, 0.01) * attempt
             completion = self.get_nanogpt_response(game_state, temperature)
             move = self.get_move_from_response(completion)
             try:
@@ -300,4 +301,4 @@ class ChessGPTPlayer(pl.LightningModule, Player):
 
     def get_config(self) -> dict:
         # TODO: add more information about the model, state, etc
-        return {"model": self.model_name}
+        return {"model": f"chessgpt_{self.checkpoint_name}"}

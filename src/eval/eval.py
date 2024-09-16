@@ -134,7 +134,7 @@ def get_player_titles_and_time(
         player_one_title = player_one_config["model"]
         player_one_time = None
     else:
-        player_one_title = f"Stockfish {player_one_config['skill_level']}"
+        player_one_title = f"stockfish_{player_one_config['skill_level']}"
         player_one_time = player_one_config["play_time"]
 
     # For player two
@@ -142,7 +142,7 @@ def get_player_titles_and_time(
         player_two_title = player_two_config["model"]
         player_two_time = None
     else:
-        player_two_title = f"Stockfish {player_two_config['skill_level']}"
+        player_two_title = f"stockfish_{player_two_config['skill_level']}"
         player_two_time = player_two_config["play_time"]
 
     return (
@@ -427,10 +427,10 @@ recording_file = "tmp/determine.csv"
 # player_ones = ["gpt-3.5-turbo-instruct"]
 player_two_recording_name = "stockfish_sweep"
 if __name__ == "__main__":
-    for i in range(1):
-        num_games = 1
+    for i in range(11):
+        num_games = 100
         player_one = ChessGPTPlayer()
         # player_one = StockfishPlayer(skill_level=i * 10, play_time=0.1)
-        player_two = StockfishPlayer(skill_level=i * 2, play_time=0.1)
+        player_two = StockfishPlayer(skill_level=i, play_time=0.1)
 
         play_game(player_one, player_two, num_games)
