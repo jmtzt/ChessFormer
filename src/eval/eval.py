@@ -8,7 +8,7 @@ from typing import Optional, Tuple
 import chess
 import chess.engine
 
-from src.eval.players import Player, StockfishPlayer
+from src.eval.players import ChessGPTPlayer, Player, StockfishPlayer
 
 
 @dataclass
@@ -429,8 +429,8 @@ player_two_recording_name = "stockfish_sweep"
 if __name__ == "__main__":
     for i in range(1):
         num_games = 1
-        # player_one = ChessGPTPlayer()
-        player_one = StockfishPlayer(skill_level=i, play_time=0.1)
-        player_two = StockfishPlayer(skill_level=i, play_time=0.1)
+        player_one = ChessGPTPlayer()
+        # player_one = StockfishPlayer(skill_level=i * 10, play_time=0.1)
+        player_two = StockfishPlayer(skill_level=i * 2, play_time=0.1)
 
         play_game(player_one, player_two, num_games)

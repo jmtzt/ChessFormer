@@ -15,6 +15,37 @@ from torch import autocast
 
 from src.config import ModelConfig
 from src.model import GPTChessLightning
+from src.network import GPT, GPTConfig
+
+
+def filter_hyperparameters(hyper_parameters: dict, config_class) -> dict:
+    valid_params = {
+        field.name for field in config_class.__dataclass_fields__.values()
+    }
+
+    filtered_params = {
+        k: v for k, v in hyper_parameters.items() if k in valid_params
+    }
+
+    return filtered_params
+
+
+def replace_key_prefix(
+    state_dict: dict, old_prefix: str, new_prefix: str
+) -> dict:
+    new_state_dict = {}
+
+    for key, value in state_dict.items():
+        if key.startswith(old_prefix):
+            new_key = key.replace(
+                old_prefix, new_prefix, 1
+            )  # only replace the first occurrence
+        else:
+            new_key = key  # keep the key unchanged if the prefix doesn't match
+
+        new_state_dict[new_key] = value
+
+    return new_state_dict
 
 
 class Player:
@@ -74,7 +105,7 @@ class StockfishPlayer(Player):
             )
         if result.move is None:
             return None
-        print(f"Game state: {game_state}")
+        # print(f"Game state: {game_state}")
         return board.san(result.move)
 
     def get_config(self) -> dict:
@@ -113,9 +144,26 @@ class ChessGPTPlayer(pl.LightningModule, Player):
         #     "float16": torch.float16,
         # }[dtype]
 
-        self.model, self.config = self.load_model_from_checkpoint(
-            self.checkpoint_path / self.model_name
+        ckpt = torch.load(
+            self.checkpoint_path / self.model_name,
+            map_location=self.device_type,
         )
+        filtered_hparams = filter_hyperparameters(
+            ckpt["hyper_parameters"], GPTConfig
+        )
+
+        gptconf = GPTConfig(**filtered_hparams)
+        state_dict = replace_key_prefix(ckpt["state_dict"], "model.", "")
+
+        # print(state_dict)
+        unwanted_prefix = "_orig_mod."
+        for k, _ in list(state_dict.items()):
+            if k.startswith(unwanted_prefix):
+                state_dict[k[len(unwanted_prefix) :]] = state_dict.pop(k)
+
+        self.model = GPT(gptconf)
+        self.model.load_state_dict(state_dict)
+
         self.model.to(self.device_type)
         self.model.eval()
         self.save_hyperparameters()
@@ -178,27 +226,31 @@ class ChessGPTPlayer(pl.LightningModule, Player):
             # model = GPT.from_pretrained(self.model_name)
             raise FileNotFoundError(f"No checkpoint found at {ckpt_path}")
 
+    @staticmethod
+    def clean_game_state(game_state: str) -> str:
+        # Split the game state into individual lines
+        lines = game_state.splitlines()
+
+        # Skip the first two lines
+        if len(lines) > 2:
+            cleaned_lines = lines[2:]
+        else:
+            # Handle the case where there are fewer than two lines, if needed
+            cleaned_lines = []
+
+        # Join the remaining lines back into a single string
+        cleaned_game_state = "\n".join(cleaned_lines)
+
+        return cleaned_game_state
+
     def get_nanogpt_response(self, game_state: str, temperature: float) -> str:
         num_samples = 1
         top_k = 200
         max_new_tokens = 10
 
-        print(f"game_state before: {game_state}")
-        # ChessGPT model was trained only on pgn transcripts, so we need to
-        # remove the stockfish evaluations from the game_state
-        # e.g.: ["stockfish elo xxx"]\n["stockfish elo xxx"]\n\n
-        game_state = game_state.split("\n\n")[1].strip()
-
-        print(f"game_state after split: {game_state}")
-
-        # We remove the space after the move number to match the training data
-        # 1.e4 e5 2.Nf3, and not 1. e4 e5 2. Nf3
+        game_state = self.clean_game_state(game_state)
         game_state = re.sub(r"(\d+\.) ", r"\1", game_state)
-
         game_state = ";" + game_state
-
-        print(f"game_state after: {game_state}")
-
         start_ids = self.encode(game_state)
 
         x = torch.tensor(start_ids, dtype=torch.long, device=self.device)[
@@ -214,7 +266,6 @@ class ChessGPTPlayer(pl.LightningModule, Player):
 
                     model_response = self.decode(y[0].tolist())
 
-        print(f"model_response: {model_response}")
         # model_response includes the input string
         model_response = model_response[len(game_state) :]
         if ";" in model_response:
@@ -227,11 +278,26 @@ class ChessGPTPlayer(pl.LightningModule, Player):
         return moves[0] if moves else ""
 
     def get_move(
-        self, board: chess.Board, game_state: str, temperature: float
+        self,
+        board: chess.Board,
+        game_state: str,
+        temperature: float,
+        max_attempts: int = 10,
     ) -> str:
-        completion = self.get_nanogpt_response(game_state, temperature)
-        return self.get_move_from_response(completion)
+        for attempt in range(max_attempts):
+            completion = self.get_nanogpt_response(game_state, temperature)
+            move = self.get_move_from_response(completion)
+            try:
+                move_uci = board.parse_san(move)
+                if move_uci in board.legal_moves:
+                    return move
+            except Exception:
+                print(
+                    f"Attempt {attempt + 1}: Invalid move '{move}' generated, trying again."
+                )
+                continue
+        return ""
 
     def get_config(self) -> dict:
         # TODO: add more information about the model, state, etc
-        return {"model_name": self.model_name}
+        return {"model": self.model_name}
