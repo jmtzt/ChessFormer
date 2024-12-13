@@ -2,12 +2,10 @@ from dataclasses import asdict
 
 import lightning as pl
 import torch
-from torch.optim import AdamW
-from torch.optim.lr_scheduler import LambdaLR
 
 from src.config import ModelConfig
 from src.network import GPT, GPTConfig
-from src.utils import filter_config, get_learning_rate, get_metadata
+from src.utils import filter_config, get_metadata
 
 
 class GPTChessLightning(pl.LightningModule):
@@ -35,6 +33,7 @@ class GPTChessLightning(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         _, loss = self(x, y)
+
         self.log(
             "train_loss",
             loss if loss else -1.0,
@@ -64,21 +63,16 @@ class GPTChessLightning(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = AdamW(
-            self.parameters(),
-            lr=self.hparams["learning_rate"],
-            betas=(self.hparams["beta1"], self.hparams["beta2"]),
+        device_type = "cuda" if self.on_gpu else "cpu"
+        optimizer = self.model.configure_optimizers(
             weight_decay=self.hparams["weight_decay"],
+            learning_rate=self.hparams["learning_rate"],
+            betas=(self.hparams["beta1"], self.hparams["beta2"]),
+            device_type=device_type,
         )
 
-        scheduler = LambdaLR(
-            optimizer,
-            lr_lambda=lambda step: get_learning_rate(
-                self.hparams["learning_rate"],
-                self.hparams["warmup_iters"],
-                self.hparams["lr_decay_iters"],
-                self.hparams["min_lr"],
-                step,
-            ),
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=self.hparams["lr_decay_iters"]
         )
+
         return [optimizer], [scheduler]

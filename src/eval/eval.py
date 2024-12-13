@@ -293,7 +293,7 @@ def initialize_game_with_random_moves(
         # If the loop completes without a break, raise an error
         raise Exception("Failed to initialize the game after maximum attempts.")
 
-    print(game_state)
+    # print(game_state)
     return game_state, board
 
 

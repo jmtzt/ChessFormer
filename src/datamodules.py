@@ -130,9 +130,13 @@ class GPTChessDataModule(pl.LightningDataModule):
 
 
 if __name__ == "__main__":
-    DATASET_PATH = "data/lichess"
+    # DATASET_PATH = "data/lichess"
+    # dm = GPTChessDataModule(
+    #     dataset_path=DATASET_PATH, file_path="lichess_6gb_blocks.zip"
+    # )
+    DATASET_PATH = "data/stockfish"
     dm = GPTChessDataModule(
-        dataset_path=DATASET_PATH, file_path="lichess_6gb_blocks.zip"
+        dataset_path=DATASET_PATH, file_path="stockfish_dataset_blocks.zip"
     )
     dm.setup(stage="prepare_data")
     dm.save_preprocessed_data()

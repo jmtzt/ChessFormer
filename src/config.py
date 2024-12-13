@@ -11,13 +11,12 @@ class ModelConfig:
     block_size: int = 1024
     bias: bool = False
     dropout: float = 0.0
-    learning_rate: float = 6e-4
+    learning_rate: float = 0.0036
     beta1: float = 0.9
     beta2: float = 0.95
-    weight_decay: float = 1e-1
-    warmup_iters: int = 2000
-    lr_decay_iters: int = 600000
-    min_lr: float = 3e-5
+    weight_decay: float = 0.0
+    warmup_iters: int = 0
+    lr_decay_iters: int = 1200000
     meta_path: str = "data/lichess/meta.pkl"
     vocab_size: int = 0
 

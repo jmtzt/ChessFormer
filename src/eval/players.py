@@ -118,11 +118,11 @@ class StockfishPlayer(Player):
 class ChessGPTPlayer(pl.LightningModule, Player):
     def __init__(
         self,
-        checkpoint_name: str = "last-v1.ckpt",
-        checkpoint_path: str = "checkpoints/trained",
+        checkpoint_name: str = "gpt2-stockfish.ckpt",
+        checkpoint_path: str = "checkpoints/gpt2-stockfish",
         activation_name: Optional[str] = None,
         activation_coefficient: Optional[float] = None,
-        meta_path: str = "data/lichess/meta.pkl",
+        meta_path: str = "data/stockfish/meta.pkl",
         load_meta: bool = True,
         # dtype: str = "float16",
         device: str = "cpu",
@@ -282,7 +282,7 @@ class ChessGPTPlayer(pl.LightningModule, Player):
         board: chess.Board,
         game_state: str,
         temperature: float,
-        max_attempts: int = 10,
+        max_attempts: int = 20,
     ) -> str:
         for attempt in range(max_attempts):
             temperature = temperature + random.uniform(-0.01, 0.01) * attempt
