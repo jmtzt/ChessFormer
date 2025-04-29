@@ -1,10 +1,10 @@
-# ChessGPT
+# ChessFormer
 
 This repo contains code for training your own NanoGPT-based models on chess data.
 
 ## Getting Started
 
-Follow these steps to set up and train your ChessGPT model:
+Follow these steps to set up and train your ChessFormer model:
 
 ### Prerequisites
 
@@ -15,7 +15,7 @@ Ensure you have Python 3.7 or later installed.
 1. **Clone the Repo**:
    Begin by cloning this repository to your local machine using:
    ```bash
-   git clone https://github.com/jmtzt/ChessGPT.git
+   git clone https://github.com/jmtzt/ChessFormer.git
    cd ChessGPT
    ```
 
